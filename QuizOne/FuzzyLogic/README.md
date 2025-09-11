@@ -72,7 +72,24 @@ El funcionamiento del sistema es el siguiente:
 El código fuente de la aplicación se encuentra en el siguiente repositorio de GitHub:
 [URL del repositorio](https://github.com/EngineeringSebastian-s/IA/edit/main/Quiz1/LogicaDifusa)
 
-La demostración del funcionamiento del sistema puede verse en el siguiente video:
+La demostración del funcionamiento:
+
+En la **Figura 1** se muestra el formulario principal de la aplicación:
+
+![Figura 1. Pantallazo de captura de datos del sistema experto](./assets/img/Menu.png)
+
+En la **Figura 2** se presenta un ejemplo de las decisiones basado en la logica difusa:
+
+![Figura 2. Representación gráfica de las velas ingresadas](./assets/img/ExampleOne.png)
+
+En la **Figura 3** otro ejemplo  de las decisiones basado en la logica difusa
+
+![Figura 3. Ejemplo adicional de análisis de velas](./assets/img/ExampleTwo.png)
+
+Finalmente, en la **Figura 4** se observa un caso de las decisiones basado en la logica difusa:
+
+![Figura 4. Caso adicional](./assets/img/ExampleThree.png)
+
 
 ---
 

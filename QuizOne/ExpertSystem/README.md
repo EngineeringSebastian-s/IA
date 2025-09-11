@@ -53,7 +53,24 @@ En la **Figura 2** se presenta un ejemplo del dibujo de las velas en la interfaz
 El código fuente de la aplicación se encuentra en el siguiente repositorio de GitHub:
 [URL del repositorio](https://github.com/EngineeringSebastian-s/IA/edit/main/Quiz1/SistemaExperto/)
 
-La demostración del funcionamiento del sistema puede verse en el siguiente video:
+La demostración del funcionamiento:
+
+En la **Figura 1** se muestra el formulario principal de la aplicación:
+
+![Figura 1. Pantallazo de captura de datos del sistema experto](./assets/img/Menu.png)
+
+En la **Figura 2** se presenta un ejemplo del dibujo de las velas:
+
+![Figura 2. Representación gráfica de las velas ingresadas](./assets/img/ExampleOne.png)
+
+En la **Figura 3** otro ejemplo de salida del sistema:
+
+![Figura 3. Ejemplo adicional de análisis de velas](./assets/img/ExampleTwo.png)
+
+Finalmente, en la **Figura 4** se observa un caso alternativo:
+
+![Figura 4. Caso adicional](./assets/img/ExampleThree.png)
+
 
 
 ---
