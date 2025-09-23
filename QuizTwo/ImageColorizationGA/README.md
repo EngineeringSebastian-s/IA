@@ -165,10 +165,79 @@ results/
     random-images-pixel-generations (1).png
     ... (y más archivos listados en el README)
 ```
+## Resultados documentados
 
-> **Nota:** En el README dentro de `results/` están las descripciones de cada imagen (qué configuración se usó y la semilla RNG asociada).
+Este apartado contiene un listado de las pruebas realizadas con imágenes de distinta naturaleza y resolución. Cada prueba sigue la estructura:
+
+* **Init**: Imagen inicial generada aleatoriamente.
+* **Generations**: Evolución de la imagen a través de generaciones.
+* **Results**: Imagen final aproximada al objetivo.
+* **Grafic**: Curva de fitness mostrando cómo fue mejorando el algoritmo.
 
 ---
 
-**Autores:** Sebastián López Osorno, [sebastian\_lopez82221@elpoli.edu.co](mailto:sebastian_lopez82221@elpoli.edu.co); Juan Camilo Muñoz, [juan\_munoz91202@elpoli.edu.co](mailto:juan_munoz91202@elpoli.edu.co)
-**Institución:** Politécnico Colombiano Jaime Isaza Cadavid. Medellín, Colombia.
+### 1. Donut Pixel Art (128x128)
+
+![Init](results/donut-pixel-art-init-128x128.png)  
+![Generations](results/donut-pixel-art-generations-128x128.png)  
+![Results](results/donut-pixel-art-results-128x128.png)  
+![Grafic](results/donut-pixel-art-grafic-128x128.png)  
+
+**Enunciado de evolución:** La prueba con mayor resolución (128x128) muestra un progreso lento en las primeras generaciones debido a la complejidad de la figura, pero a partir de la generación 500 se logra una aproximación reconocible del donut, con bordes más definidos en la generación 1000.
+
+---
+
+### 2. Donuts Pixel Art (16x16)
+
+![Init](results/donuts-pixel-art-init-16x16.png)  
+![Generations](results/donuts-pixel-art-generations-16x16.png)  
+![Results](results/donuts-pixel-art-results-16x16.png)  
+![Grafic](results/donuts-pixel-art-grafic-16x16.png)  
+
+**Enunciado de evolución:** En resolución baja (16x16), el algoritmo converge rápidamente. Hacia la generación 100 ya se observan los tonos característicos del donut, aunque con menor detalle. La curva de fitness se estabiliza pronto.
+
+---
+
+### 3. Icono Playa (Beach Icon)
+
+![Init](results/icon-beach-pixel-init.jpg)  
+![Generations](results/icon-beach-pixel-generations.jpg)  
+![Grafic](results/icon-beach-pixel-grafic.jpg)  
+
+**Enunciado de evolución:** El ícono de playa evoluciona mostrando primero parches de color azul y amarillo que luego se distribuyen en forma reconocible (cielo y arena). La convergencia ocurre antes de la generación 500.
+
+---
+
+### 4. Matrix Pixel Random
+
+![Init](results/matrix-pixel-random-init.jpg)  
+![Generations](results/matrix-pixel-random-generations.jpg)  
+![Grafic](results/matrix-pixel-random-grafic.jpg)  
+
+**Enunciado de evolución:** La imagen de estilo "Matrix" presenta dificultad por la distribución aleatoria de caracteres verdes sobre fondo negro. El algoritmo tarda en estabilizarse, logrando mayor contraste hacia la generación 800.
+
+---
+
+### 5. Imagen Natural
+
+![Init](results/natural-picture-init.jpg)  
+![Generations](results/natural-picture-generations.jpg)  
+![Result](results/natural-picture-result.jpg)  
+![Grafic](results/natural-picture-grafic.jpg)  
+
+**Enunciado de evolución:** En imágenes naturales con múltiples colores y gradientes, el algoritmo necesita más generaciones para distinguir formas. Aunque no se alcanza una nitidez perfecta, la aproximación de tonos se percibe claramente en la generación 1000.
+
+---
+
+### 6. Imágenes Aleatorias (7 pruebas)
+
+Cada prueba contiene un set de imágenes iniciales, evolución, gráficas de fitness y resultados finales.
+
+Ejemplo para la primera prueba:
+
+![Init](results/random-images-pixel-init%20%281%29.png)  
+![Generations](results/random-images-pixel-generations%20%281%29.png)  
+![Results](results/random-images-pixel-results%20%281%29.png)  
+![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
+
+...y así sucesivamente hasta la prueba (7).
