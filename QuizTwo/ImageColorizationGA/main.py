@@ -196,41 +196,41 @@ MUTATION_OPERATORS = [
 # ----------------- Función para elegir modo -----------------
 def ask_initialization_mode():
     """
-    Abre una ventana Tkinter con dos botones (Grayscale o Colormap).
-    Devuelve 'grayscale' o 'colormap' según la selección.
+    Pregunta por consola si se quiere inicializar en modo Grayscale o Colormap.
+    Si se selecciona Colormap, pregunta qué esquema usar.
+    Devuelve 'grayscale' o ('colormap', cmap).
     """
-    choice = {"mode": None}
+    while True:
+        print("\nSeleccione método de inicialización de la población:")
+        print("1. Grayscale")
+        print("2. Colormap")
+        choice = input("Ingrese 1 o 2: ").strip()
 
-    def set_mode(mode):
-        choice["mode"] = mode
-        root.destroy()
+        if choice == "1":
+            return "grayscale"
 
-    root = tk.Tk()
-    root.title("Seleccione método de inicialización")
+        elif choice == "2":
+            while True:
+                print("\nSeleccione el colormap a utilizar:")
+                print("a. Jet")
+                print("b. Spectral")
+                print("c. Viridis")
+                cmap_choice = input("Ingrese a, b o c: ").strip().lower()
 
-    tk.Label(root, text="¿Cómo desea inicializar la población?", font=("Arial", 14)).pack(pady=10)
-
-    frame = tk.Frame(root)
-    frame.pack(pady=10)
-
-    # Imagen representativa grayscale
-    gray_img = Image.new("RGB", (80, 80), color=(128, 128, 128))
-    gray_img_tk = ImageTk.PhotoImage(gray_img)
-    tk.Button(frame, image=gray_img_tk, text="Grayscale", compound="top",
-              command=lambda: set_mode("grayscale")).grid(row=0, column=0, padx=20)
-
-    # Imagen representativa colormap
-    cmap_img = Image.new("RGB", (80, 80), color=(0, 0, 255))  # azul como ejemplo
-    cmap_img_tk = ImageTk.PhotoImage(cmap_img)
-    tk.Button(frame, image=cmap_img_tk, text="Colormap", compound="top",
-              command=lambda: set_mode("colormap")).grid(row=0, column=1, padx=20)
-
-    root.mainloop()
-    return choice["mode"]
+                if cmap_choice == "a":
+                    return ("colormap", "jet")
+                elif cmap_choice == "b":
+                    return ("colormap", "Spectral")
+                elif cmap_choice == "c":
+                    return ("colormap", "viridis")
+                else:
+                    print("❌ Opción inválida. Intente de nuevo.")
+        else:
+            print("❌ Opción inválida. Intente de nuevo.")
 
 
 # ---------- Inicialización ----------
-def initialize_population_colormap(pop_size, h, w, gray_image, cmap="jet"):
+def initialize_population_colormap(pop_size, h, w, gray_image, cmap="viridis"):
     base = gray_to_colormap(gray_image, cmap)
     population = np.zeros((pop_size, h, w, 3), dtype=np.float32)
     for i in range(pop_size):
@@ -262,8 +262,11 @@ def run_ga(target_rgb, gray_image, pop_size=100, max_gen=1000):
     mode = ask_initialization_mode()
     if mode == "grayscale":
         population = initialize_population_grayscale(pop_size, h, w, gray_image)
-    elif mode == "colormap":
-        population = initialize_population_colormap(pop_size, h, w, gray_image)
+
+    elif isinstance(mode, tuple) and mode[0] == "colormap":
+        _, cmap = mode
+        population = initialize_population_colormap(pop_size, h, w, gray_image, cmap=cmap)
+
     else:
         raise ValueError("No se seleccionó ningún modo de inicialización.")
     best_history = []
@@ -326,8 +329,18 @@ target_rgb = load_or_create_image(INPUT_IMAGE_PATH, size=IMAGE_SIZE)
 h, w, _ = target_rgb.shape
 target_gray = rgb_to_luminance(target_rgb).astype(np.float32)
 
-print("Tamaño imagen:", target_rgb.shape)
-print("Población:", POPULATION_SIZE, "Generaciones:", MAX_GENERATIONS)
+print(f"INPUT_IMAGE_PATH = {INPUT_IMAGE_PATH}")
+print(f"IMAGE_SIZE = {IMAGE_SIZE}")
+print(f"POPULATION_SIZE = {POPULATION_SIZE}")
+print(f"MAX_GENERATIONS = {MAX_GENERATIONS}")
+print(f"TOURNAMENT_SIZE = {TOURNAMENT_SIZE}")
+print(f"ELITISM = {ELITISM}")
+print(f"MUTATION_RATE = {MUTATION_RATE}")
+print(f"CROSSOVER_RATE = {CROSSOVER_RATE}")
+print(f"RANDOM_SEED = {RANDOM_SEED}")
+print(f"DISPLAY_GENERATIONS = {DISPLAY_GENERATIONS}")
+print(f"RESTART_INTERVAL = {RESTART_INTERVAL}")
+
 
 history, snapshots, best_final = run_ga(target_rgb.astype(np.float32), target_gray,
                                         pop_size=POPULATION_SIZE, max_gen=MAX_GENERATIONS)
