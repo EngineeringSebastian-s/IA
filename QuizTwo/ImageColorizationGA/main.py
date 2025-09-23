@@ -6,16 +6,20 @@ import os
 from copy import deepcopy
 
 # ---------- Parámetros configurables ----------
-INPUT_IMAGE_PATH = ""
-IMAGE_SIZE = (2, 2)
-POPULATION_SIZE = 150
-MAX_GENERATIONS = 1000
-TOURNAMENT_SIZE = 3
-ELITISM = 2
-MUTATION_RATE = 0.7
-CROSSOVER_RATE = 0.9
-RANDOM_SEED = 42
-DISPLAY_GENERATIONS = [1, 10, 100, 1000]
+# ---------- Parámetros configurables ----------
+
+INPUT_IMAGE_PATH = ""              # Ruta de la imagen objetivo a replicar. Si está vacío, se genera una imagen por defecto
+IMAGE_SIZE = (8, 8)                # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
+POPULATION_SIZE = 1000             # Número de individuos (soluciones) en cada generación
+MAX_GENERATIONS = 1000            # Número máximo de generaciones del algoritmo genético
+TOURNAMENT_SIZE = 3               # Número de individuos seleccionados aleatoriamente para competir en el torneo de selección
+ELITISM = 2                       # Número de mejores individuos que pasan directamente a la siguiente generación (sin modificación)
+MUTATION_RATE = 0.7               # Probabilidad de que un individuo sufra mutación (entre 0 y 1)
+CROSSOVER_RATE = 0.9              # Probabilidad de que ocurra cruce entre dos padres (entre 0 y 1)
+RANDOM_SEED = 42                  # Semilla fija para garantizar reproducibilidad en los resultados
+DISPLAY_GENERATIONS = [1, 10, 100, 1000, 10000]  # Generaciones en las que se guardan o visualizan resultados intermedios
+RESTART_INTERVAL = 500           # Intervalo (en generaciones) para reiniciar parcialmente la población y evitar estancamiento
+
 
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
@@ -163,7 +167,15 @@ def initialize_population(pop_size, h, w, gray_image):
     base = np.stack([gray_image, gray_image, gray_image], axis=-1).astype(np.float32)
     population = np.zeros((pop_size, h, w, 3), dtype=np.float32)
     for i in range(pop_size):
-        population[i] = base + np.random.normal(0, 1.0, size=base.shape)
+        noise = np.random.normal(0, 20.0, size=base.shape)
+        population[i] = np.clip(base + noise, 0, 255)
+    return population
+
+def reset_population(population, reset_rate=0.2):
+    n = int(len(population) * reset_rate)
+    for i in range(n):
+        h, w, _ = population[i].shape
+        population[i] = np.random.rand(h, w, 3) * 255
     return population
 
 # ---------- Algoritmo principal ----------
@@ -186,6 +198,11 @@ def run_ga(target_rgb, gray_image, pop_size=100, max_gen=1000):
         if gen in DISPLAY_GENERATIONS:
             best_images[gen] = clamp_rgb(best_ind.copy())
 
+        # Reinicio parcial
+        if gen % RESTART_INTERVAL == 0:
+            population = reset_population(population)
+
+        # Nueva generación
         new_pop = []
         elite_idxs = np.argsort(fits)[-ELITISM:]
         for ei in elite_idxs:
