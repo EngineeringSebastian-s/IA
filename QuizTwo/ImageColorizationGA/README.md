@@ -86,7 +86,34 @@ plt.savefig('image_luminosity_method.png')
 
 ![Método de Luminosidad](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_luminosity_method.png)
 
-### 1.3 Función objetivo
+### 1.3 Conversión de Grayscale a RGB con Colormap
+
+El proceso `gray_to_rgb` consiste en asignar **colores falsos** a los niveles de intensidad de una imagen en escala de grises, transformando una matriz 2D de luminancia en una imagen RGB coloreada según un espectro definido (p.ej., arcoíris). Esto se utiliza en visualización científica para resaltar variaciones que en gris no son fácilmente perceptibles.
+
+**Pasos principales:**
+
+1. **Lectura de la imagen en escala de grises**
+   Se parte de una imagen de entrada representada como una matriz 2D de intensidades (0–255).
+
+   ![Imagen en Grayscale](https://support.ptc.com/help/mathcad/r10.0/en/PTC_Mathcad_Help/images/mprime.1.0378.07.jpg)
+
+2. **Definición de un colormap (espectro arcoíris)**
+   Se asigna a cada valor de intensidad un color RGB correspondiente dentro de un mapa predefinido. Por ejemplo:
+
+   * valores bajos → azul,
+   * valores medios → verde/amarillo,
+   * valores altos → rojo.
+
+   ![Colormap arcoíris](https://support.ptc.com/help/mathcad/r10.0/en/PTC_Mathcad_Help/images/example_grayscale_and_color_in_images7.png)
+
+3. **Conversión a RGB y escritura en archivo**
+   La imagen original en grises se recorre, asignando a cada píxel su color del colormap. Finalmente se guarda en un archivo de salida con tres canales.
+
+   ![Imagen en falso color](https://support.ptc.com/help/mathcad/r10.0/en/PTC_Mathcad_Help/images/mprime.1.0378.11.jpg)
+
+> **Nota:** A diferencia de otras funciones, `gray_to_rgb` no utiliza la variable `ORIGIN` para definir el índice inicial de los arreglos, ya que el mapeo se aplica directamente a las intensidades de la imagen.
+
+### 1.4 Función objetivo
 
 La función objetivo combina dos componentes: (1) la diferencia absoluta total en los tres canales RGB entre un individuo y la imagen objetivo RGB (cuando esta exista), y (2) la diferencia absoluta total entre la luminancia (conversión NTSC) del individuo y la luminancia objetivo (grayscale). Se pesa cada componente mediante factores `alpha` (para RGB) y `beta` (para luminancia). Finalmente se transforma el error a una medida de fitness creciente:
 
@@ -98,11 +125,11 @@ $$\text{fitness} = \dfrac{1}{1 + \text{error}_{total}}$$
 
 Donde \$$Y\$$ es la luminancia NTSC: \$$Y = 0.299 R + 0.587 G + 0.114 B\$$ y la suma se realiza sobre todos los píxeles p.
 
-### 1.4 Definición de población
+### 1.5 Definición de población
 
 La población está compuesta por N individuos, cada uno representado por una matriz de tamaño `h × w × 3` (canales R,G,B). La inicialización toma la luminancia objetivo y crea imágenes base replicando esa luminancia en los tres canales, luego añade ruido gaussiano (media 0, desviación típica configurable) para generar diversidad inicial. Se almacenan todas las imágenes en memoria como arrays `float32` durante la ejecución del GA.
 
-### 1.5 Definición del cromosoma
+### 1.6 Definición del cromosoma
 
 El cromosoma es una codificación directa: cada gen corresponde al valor de color de un píxel en uno de los canales. Es decir, el cromosoma es exactamente la matriz `h × w × 3` (o su versión linealizada de longitud `h*w*3`). Esta representación real-valued facilita aplicar operadores de cruces y mutaciones que actúan directamente sobre valores RGB (ruido, desplazamientos de canal, escalado de canales, etc.).
 
@@ -114,7 +141,7 @@ Cromosoma (individuo): [ [ [R,G,B], [R,G,B], ... ],  # fila 0
                          ... ]
 ```
 
-### 1.6 Estrategia de cruce y mutación
+### 1.7 Estrategia de cruce y mutación
 
 **Cruce.** Se utiliza un cruce uniforme a nivel píxel: se genera una máscara binaria de la dimensión `h × w` con probabilidad 0.5, y para cada posición se selecciona el píxel proveniente del padre A o del padre B según la máscara. Este cruce produce dos hijos complementarios y preserva patrones locales cuando la máscara tiene regiones contiguas aleatorias. La probabilidad de aplicar cruce entre dos padres está dada por `CROSSOVER_RATE`.
 
@@ -133,7 +160,7 @@ Cromosoma (individuo): [ [ [R,G,B], [R,G,B], ... ],  # fila 0
 
 La tasa de mutación por individuo es `MUTATION_RATE`. Además se aplica **elitismo** (los `ELITISM` mejores individuos pasan directo a la siguiente generación) y se incluye un mecanismo de **reinicio parcial** cada `RESTART_INTERVAL` generaciones para evitar estancamiento: se re-inicializa un porcentaje de la población con ruido aleatorio.
 
-### 1.7 Aplicación construida
+### 1.8 Aplicación construida
 
 La implementación está escrita en **Python** y usa las bibliotecas principales: `numpy` para representación y cálculo matricial, `Pillow (PIL)` para carga y redimensión de imágenes, `matplotlib` para visualización y gráficas de evolución, y utilidades estándar (`os`, `random`, `copy`). El script produce gráficos de la evolución del mejor fitness, snapshots de generaciones seleccionadas y guarda imágenes de interés en la carpeta `results/` junto a un `README` que documenta cada ejecución.
 
@@ -145,7 +172,7 @@ La implementación está escrita en **Python** y usa las bibliotecas principales
 
 También hay experimentos con imágenes píxel-art, donuts, iconos y colecciones de imágenes aleatorias (archivos listados en `results/`).
 
-### 1.8 Conclusiones
+### 1.9 Conclusiones
 
 1. Los algoritmos genéticos con representación directa de píxeles pueden aproximar colores plausibles respetando la luminancia objetivo; sin embargo, la convergencia a colores exactos (cuando el objetivo RGB existe) depende fuertemente del tamaño de población, diversidad de mutaciones y la presencia de operadores dirigidos (como `mutate_towards_gray`).
 
@@ -312,6 +339,7 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
 
 
