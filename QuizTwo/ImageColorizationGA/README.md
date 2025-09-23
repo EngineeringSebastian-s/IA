@@ -21,6 +21,11 @@ El problema abordado consiste en reconstruir o estimar una versión a color de u
 
 El enfoque propuesto modela cada individuo como una imagen completa (matriz h×w×3). A partir de una población inicial generada perturbando la luminancia objetivo con ruido, se aplica selección por torneo, cruce uniforme y un conjunto diverso de operadores de mutación (ruido pequeño/grande, intercambio de píxeles, inversión de parches, desplazamiento de canales, etc.). Se registra la evolución del mejor fitness a través de las generaciones y se guardan snapshots (imágenes) en generaciones seleccionadas. Para documentar comportamiento y robustez se ejecutaron múltiples experimentos y se guardaron resultados en la carpeta `results` (iniciales, generaciones intermedias, gráficas y resultado final).
 
+![Conversión de RGB a Grayscale](Conversion_from_RGB_to_Grayscale.png)
+
+![Conversión de Grayscale a Color Map](Conversion_of_Grayscale_to_Color_Map.png)
+
+
 ### 1.2 Conversión de RGB a escala de grises
 
 Una imagen en color está definida por sus tres componentes: rojo (R), verde (G) y azul (B). Cada canal es una matriz bidimensional de valores (0–255). En conjunto conforman una matriz tridimensional \(h \times w \times 3\).  
@@ -339,6 +344,7 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
 
 
