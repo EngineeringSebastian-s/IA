@@ -6,7 +6,6 @@ import os
 from copy import deepcopy
 
 # ---------- Parámetros configurables ----------
-# ---------- Parámetros configurables ----------
 
 INPUT_IMAGE_PATH = ""              # Ruta de la imagen objetivo a replicar. Si está vacío, se genera una imagen por defecto
 IMAGE_SIZE = (8, 8)                # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
