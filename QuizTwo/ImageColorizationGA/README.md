@@ -21,11 +21,11 @@ La función objetivo combina dos componentes: (1) la diferencia absoluta total e
 
 **Ecuación 1:**
 
-$\text{error}_{total} = \alpha \sum_{p} |RGB_{ind}(p) - RGB_{target}(p)| + \beta \sum_{p} |Y_{ind}(p) - Y_{target}(p)|$
+$$\text{error}_{total} = \alpha \sum_{p} |RGB_{ind}(p) - RGB_{target}(p)| + \beta \sum_{p} |Y_{ind}(p) - Y_{target}(p)|$$
 
-$\text{fitness} = \dfrac{1}{1 + \text{error}_{total}}$
+$$\text{fitness} = \dfrac{1}{1 + \text{error}_{total}}$$
 
-Donde \$Y\$ es la luminancia NTSC: \$Y = 0.299 R + 0.587 G + 0.114 B\$ y la suma se realiza sobre todos los píxeles p.
+Donde \$$Y\$$ es la luminancia NTSC: \$$Y = 0.299 R + 0.587 G + 0.114 B\$$ y la suma se realiza sobre todos los píxeles p.
 
 ### 1.3 Definición de población
 
@@ -241,3 +241,4 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
