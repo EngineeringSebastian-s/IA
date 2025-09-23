@@ -15,7 +15,72 @@ El problema abordado consiste en reconstruir o estimar una versión a color de u
 
 El enfoque propuesto modela cada individuo como una imagen completa (matriz h×w×3). A partir de una población inicial generada perturbando la luminancia objetivo con ruido, se aplica selección por torneo, cruce uniforme y un conjunto diverso de operadores de mutación (ruido pequeño/grande, intercambio de píxeles, inversión de parches, desplazamiento de canales, etc.). Se registra la evolución del mejor fitness a través de las generaciones y se guardan snapshots (imágenes) en generaciones seleccionadas. Para documentar comportamiento y robustez se ejecutaron múltiples experimentos y se guardaron resultados en la carpeta `results` (iniciales, generaciones intermedias, gráficas y resultado final).
 
-### 1.2 Función objetivo
+### 1.2 Conversión de RGB a escala de grises
+
+Una imagen en color está definida por sus tres componentes: rojo (R), verde (G) y azul (B). Cada canal es una matriz bidimensional de valores (0–255). En conjunto conforman una matriz tridimensional \(h \times w \times 3\).  
+En contraste, una imagen en escala de grises es una matriz \(h \times w\), donde cada píxel representa la intensidad de luminancia percibida.
+
+### Métodos de conversión
+
+#### 1.2.1. Promedio simple
+El método más básico calcula el promedio aritmético de los tres canales:
+\[
+Y = \frac{R + G + B}{3}
+\]
+
+Ejemplo en Python:
+```python
+grayscale_average_img = np.mean(fix_img, axis=2)
+plt.imshow(grayscale_average_img, cmap='gray')
+plt.savefig('image_average_method.png')
+````
+
+Resultado:
+
+![Método del promedio](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_average_method.png)
+
+---
+
+#### 1.2.2. Promedio ponderado (NTSC / ITU-R BT.601)
+
+Usado en televisión NTSC y en OpenCV.
+Se ajusta a la percepción humana: el ojo es más sensible al verde que al rojo, y al azul casi nada.
+
+$$
+Y = 0.299R + 0.587G + 0.114B
+$$
+
+Ejemplo en Python:
+
+```python
+Y = 0.299 * R + 0.587 * G + 0.114 * B
+plt.imshow(Y, cmap='gray')
+plt.savefig('image_weighted_average_byhand.png')
+```
+
+Resultado:
+![Promedio ponderado (manual)](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_weighted_average_OPENCV.png)
+
+---
+
+#### 1.2.3. Método de luminosidad (ITU-R BT.709)
+
+Más sofisticado, usado en estándares modernos (HD/4K):
+
+$$
+Y = 0.2126R + 0.7152G + 0.0722B
+$$
+
+Ejemplo en Python:
+
+```python
+Z = 0.2126 * R + 0.7152 * G + 0.0722 * B
+plt.imshow(Z, cmap='gray')
+plt.savefig('image_luminosity_method.png')
+```
+
+
+### 1.3 Función objetivo
 
 La función objetivo combina dos componentes: (1) la diferencia absoluta total en los tres canales RGB entre un individuo y la imagen objetivo RGB (cuando esta exista), y (2) la diferencia absoluta total entre la luminancia (conversión NTSC) del individuo y la luminancia objetivo (grayscale). Se pesa cada componente mediante factores `alpha` (para RGB) y `beta` (para luminancia). Finalmente se transforma el error a una medida de fitness creciente:
 
@@ -27,11 +92,11 @@ $$\text{fitness} = \dfrac{1}{1 + \text{error}_{total}}$$
 
 Donde \$$Y\$$ es la luminancia NTSC: \$$Y = 0.299 R + 0.587 G + 0.114 B\$$ y la suma se realiza sobre todos los píxeles p.
 
-### 1.3 Definición de población
+### 1.4 Definición de población
 
 La población está compuesta por N individuos, cada uno representado por una matriz de tamaño `h × w × 3` (canales R,G,B). La inicialización toma la luminancia objetivo y crea imágenes base replicando esa luminancia en los tres canales, luego añade ruido gaussiano (media 0, desviación típica configurable) para generar diversidad inicial. Se almacenan todas las imágenes en memoria como arrays `float32` durante la ejecución del GA.
 
-### 1.4 Definición del cromosoma
+### 1.5 Definición del cromosoma
 
 El cromosoma es una codificación directa: cada gen corresponde al valor de color de un píxel en uno de los canales. Es decir, el cromosoma es exactamente la matriz `h × w × 3` (o su versión linealizada de longitud `h*w*3`). Esta representación real-valued facilita aplicar operadores de cruces y mutaciones que actúan directamente sobre valores RGB (ruido, desplazamientos de canal, escalado de canales, etc.).
 
@@ -43,7 +108,7 @@ Cromosoma (individuo): [ [ [R,G,B], [R,G,B], ... ],  # fila 0
                          ... ]
 ```
 
-### 1.5 Estrategia de cruce y mutación
+### 1.6 Estrategia de cruce y mutación
 
 **Cruce.** Se utiliza un cruce uniforme a nivel píxel: se genera una máscara binaria de la dimensión `h × w` con probabilidad 0.5, y para cada posición se selecciona el píxel proveniente del padre A o del padre B según la máscara. Este cruce produce dos hijos complementarios y preserva patrones locales cuando la máscara tiene regiones contiguas aleatorias. La probabilidad de aplicar cruce entre dos padres está dada por `CROSSOVER_RATE`.
 
@@ -62,7 +127,7 @@ Cromosoma (individuo): [ [ [R,G,B], [R,G,B], ... ],  # fila 0
 
 La tasa de mutación por individuo es `MUTATION_RATE`. Además se aplica **elitismo** (los `ELITISM` mejores individuos pasan directo a la siguiente generación) y se incluye un mecanismo de **reinicio parcial** cada `RESTART_INTERVAL` generaciones para evitar estancamiento: se re-inicializa un porcentaje de la población con ruido aleatorio.
 
-### 1.6 Aplicación construida
+### 1.7 Aplicación construida
 
 La implementación está escrita en **Python** y usa las bibliotecas principales: `numpy` para representación y cálculo matricial, `Pillow (PIL)` para carga y redimensión de imágenes, `matplotlib` para visualización y gráficas de evolución, y utilidades estándar (`os`, `random`, `copy`). El script produce gráficos de la evolución del mejor fitness, snapshots de generaciones seleccionadas y guarda imágenes de interés en la carpeta `results/` junto a un `README` que documenta cada ejecución.
 
@@ -74,7 +139,7 @@ La implementación está escrita en **Python** y usa las bibliotecas principales
 
 También hay experimentos con imágenes píxel-art, donuts, iconos y colecciones de imágenes aleatorias (archivos listados en `results/`).
 
-### 1.7 Conclusiones
+### 1.8 Conclusiones
 
 1. Los algoritmos genéticos con representación directa de píxeles pueden aproximar colores plausibles respetando la luminancia objetivo; sin embargo, la convergencia a colores exactos (cuando el objetivo RGB existe) depende fuertemente del tamaño de población, diversidad de mutaciones y la presencia de operadores dirigidos (como `mutate_towards_gray`).
 
@@ -241,4 +306,5 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
