@@ -7,7 +7,10 @@ Politécnico Colombiano Jaime Isaza Cadavid. Medellín, Colombia.
 
 ---
 
-## 1. Algoritmo genético para Image Colorization (Versión principal)
+## 1. Algoritmo genético para Image Colorization
+
+![Conversión de imagen a matriz de pixeles](https://process.filestackapi.com/cache=expiry:max/resize=width:1050/jvbsG1EPRXWFGnoPxB0G)
+
 
 ### 1.1 Descripción general
 
@@ -306,6 +309,7 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
 
 
