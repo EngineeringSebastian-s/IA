@@ -16,6 +16,9 @@ Politécnico Colombiano Jaime Isaza Cadavid. Medellín, Colombia.
 
 El problema abordado consiste en reconstruir o estimar una versión a color de una imagen dada únicamente su versión en escala de grises. La entrada del sistema es una imagen RGB objetivo que se convierte a una matriz de píxeles; esa misma imagen se transforma con la conversión NTSC (luminancia) para obtener la versión en gris que actúa como restricción/guía. El reto es generar, mediante búsqueda estocástica (algoritmo genético), imágenes RGB cuya luminancia se aproximen a la imagen gris objetivo y, adicionalmente, cuyos valores RGB se acerquen al objetivo cuando éste está disponible. El objetivo del algoritmo es encontrar arreglos de píxeles (imágenes) que optimicen simultáneamente la semejanza en luminancia y la similitud RGB.
 
+![Descomposición por canales](https://upload.wikimedia.org/wikipedia/commons/3/33/Beyoglu_4671_tricolor.png)
+
+
 El enfoque propuesto modela cada individuo como una imagen completa (matriz h×w×3). A partir de una población inicial generada perturbando la luminancia objetivo con ruido, se aplica selección por torneo, cruce uniforme y un conjunto diverso de operadores de mutación (ruido pequeño/grande, intercambio de píxeles, inversión de parches, desplazamiento de canales, etc.). Se registra la evolución del mejor fitness a través de las generaciones y se guardan snapshots (imágenes) en generaciones seleccionadas. Para documentar comportamiento y robustez se ejecutaron múltiples experimentos y se guardaron resultados en la carpeta `results` (iniciales, generaciones intermedias, gráficas y resultado final).
 
 ### 1.2 Conversión de RGB a escala de grises
@@ -309,6 +312,7 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
 
 
