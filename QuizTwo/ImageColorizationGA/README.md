@@ -20,6 +20,8 @@ El enfoque propuesto modela cada individuo como una imagen completa (matriz h×w
 Una imagen en color está definida por sus tres componentes: rojo (R), verde (G) y azul (B). Cada canal es una matriz bidimensional de valores (0–255). En conjunto conforman una matriz tridimensional \(h \times w \times 3\).  
 En contraste, una imagen en escala de grises es una matriz \(h \times w\), donde cada píxel representa la intensidad de luminancia percibida.
 
+![Imagen Original](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/original_image.png)
+
 ### Métodos de conversión
 
 #### 1.2.1. Promedio simple
@@ -34,8 +36,6 @@ grayscale_average_img = np.mean(fix_img, axis=2)
 plt.imshow(grayscale_average_img, cmap='gray')
 plt.savefig('image_average_method.png')
 ````
-
-Resultado:
 
 ![Método del promedio](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_average_method.png)
 
@@ -58,7 +58,6 @@ plt.imshow(Y, cmap='gray')
 plt.savefig('image_weighted_average_byhand.png')
 ```
 
-Resultado:
 ![Promedio ponderado (manual)](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_weighted_average_OPENCV.png)
 
 ---
@@ -79,6 +78,7 @@ plt.imshow(Z, cmap='gray')
 plt.savefig('image_luminosity_method.png')
 ```
 
+![Método de Luminosidad](https://raw.githubusercontent.com/mmuratarat/mmuratarat.github.io/refs/heads/master/_posts/images/image_luminosity_method.png)
 
 ### 1.3 Función objetivo
 
@@ -306,5 +306,6 @@ Ejemplo para la primera prueba:
 ![Grafic](results/random-images-pixel-grafic%20%281%29.png)  
 
 ...y así sucesivamente hasta la prueba (7).
+
 
 
