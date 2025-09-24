@@ -1,6 +1,5 @@
 import os
 import random
-import tkinter as tk
 from copy import deepcopy
 
 import matplotlib.cm as cm
@@ -10,10 +9,10 @@ from PIL import Image, ImageTk
 
 # ---------- Parámetros configurables ----------
 
-INPUT_IMAGE_PATH = "z:/natural-scenery-picture.jpg"  # Ruta de la imagen objetivo a replicar. Si está vacío, se genera una imagen por defecto
-IMAGE_SIZE = (32, 32)  # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
-POPULATION_SIZE = 150  # Número de individuos (soluciones) en cada generación
-MAX_GENERATIONS = 1000  # Número máximo de generaciones del algoritmo genético
+INPUT_IMAGE_PATH = "/img/natural-scenery-picture.jpg"  # Ruta de la imagen objetivo a replicar. Si está vacío, se genera una imagen por defecto
+IMAGE_SIZE = (256, 256)  # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
+POPULATION_SIZE = 1000  # Número de individuos (soluciones) en cada generación
+MAX_GENERATIONS = 10000  # Número máximo de generaciones del algoritmo genético
 TOURNAMENT_SIZE = 3  # Número de individuos seleccionados aleatoriamente para competir en el torneo de selección
 ELITISM = 2  # Número de mejores individuos que pasan directamente a la siguiente generación (sin modificación)
 MUTATION_RATE = 0.7  # Probabilidad de que un individuo sufra mutación (entre 0 y 1)
