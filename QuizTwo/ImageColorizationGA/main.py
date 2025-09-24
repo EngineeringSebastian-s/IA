@@ -100,6 +100,29 @@ def fitness_population_parallel(population, target_rgb, target_gray, alpha=1.0, 
                 fits[i] = 0.0
     return fits
 
+def fitness_population_vectorized(population, target_rgb, target_gray, alpha=1.0, beta=0.9):
+    # population: (N, H, W, 3)
+    # target_rgb: (H, W, 3)
+    # target_gray: (H, W)
+
+    # Error RGB (por individuo)
+    err_rgb = np.abs(population - target_rgb[None, ...]).sum(axis=(1, 2, 3))  # shape: (N,)
+
+    # Convertir cada individuo a escala de grises (luminancia)
+    y_pop = (
+        0.299 * population[..., 0]
+        + 0.587 * population[..., 1]
+        + 0.114 * population[..., 2]
+    )  # shape: (N, H, W)
+
+    # Error en luminancia
+    err_y = np.abs(y_pop - target_gray[None, ...]).sum(axis=(1, 2))  # shape: (N,)
+
+    error_total = alpha * err_rgb + beta * err_y  # shape: (N,)
+    fitness = 1.0 / (1.0 + error_total)
+
+    return fitness  # shape: (N, )
+
 # ---------- Operadores genéticos ----------
 def tournament_selection(pop, fits, k=3):
     idxs = np.random.choice(len(pop), k, replace=False)
