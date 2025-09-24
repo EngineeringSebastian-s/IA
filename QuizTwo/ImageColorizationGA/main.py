@@ -69,6 +69,10 @@ def fitness_individual(individual, target_rgb, target_gray, alpha=1.0, beta=0.9)
     error_total = alpha * err_rgb + beta * err_y
     return 1.0 / (1.0 + error_total)
 
+def fitness_individual_wrapper(args):
+    individual, target_rgb, target_gray, alpha, beta = args
+    # Reusa tu función fitness_individual
+    return fitness_individual(individual, target_rgb, target_gray, alpha, beta)
 
 def fitness_population(population, target_rgb, target_gray, alpha=1.0, beta=0.9):
     N = population.shape[0]
@@ -77,6 +81,24 @@ def fitness_population(population, target_rgb, target_gray, alpha=1.0, beta=0.9)
         fits[i] = fitness_individual(population[i], target_rgb, target_gray, alpha, beta)
     return fits
 
+
+def fitness_population_parallel(population, target_rgb, target_gray, alpha=1.0, beta=0.9, num_workers=None):
+    N = population.shape[0]
+    fits = np.zeros(N, dtype=np.float64)
+    args_iter = [(population[i], target_rgb, target_gray, alpha, beta) for i in range(N)]
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        # mapa de índices a futures
+        future_to_idx = {executor.submit(fitness_individual_wrapper, args): i
+                         for i, args in enumerate(args_iter)}
+        for future in as_completed(future_to_idx):
+            i = future_to_idx[future]
+            try:
+                fits[i] = future.result()
+            except Exception as e:
+                print("Error en fitness paralelo:", e)
+                fits[i] = 0.0
+    return fits
 
 # ---------- Operadores genéticos ----------
 def tournament_selection(pop, fits, k=3):
@@ -322,6 +344,111 @@ def run_ga(target_rgb, gray_image, pop_size=100, max_gen=1000):
     best_images['final'] = clamp_rgb(best_ind.copy())
     return best_history, best_images, clamp_rgb(best_ind.copy())
 
+def run_ga_parallel(target_rgb, gray_image,
+                    pop_size=100, max_gen=1000,
+                    use_parallel=False, num_workers=None,
+                    initial_population=None):
+    """
+    use_parallel: si True, usa fitness_population_parallel; si False, usa fitness_population_vectorized
+    num_workers: número de procesos para paralelismo
+    initial_population: si se pasa, se usa esa población inicial directamente
+    """
+    h, w, _ = target_rgb.shape
+
+    # Inicialización de la población
+    if initial_population is not None:
+        population = initial_population
+    else:
+        mode = ask_initialization_mode()
+        if mode == "grayscale":
+            population = initialize_population_grayscale(pop_size, h, w, gray_image)
+        elif isinstance(mode, tuple) and mode[0] == "colormap":
+            _, cmap = mode
+            population = initialize_population_colormap(pop_size, h, w, gray_image, cmap=cmap)
+        else:
+            raise ValueError("No se seleccionó modo válido de inicialización.")
+
+    best_history = []
+    best_images = {}
+    best_fitness = -1.0
+    best_ind = None
+
+    generations_without_improvement = 0
+    NO_IMPROVEMENT_LIMIT = 500
+    max_possible_fitness = 1.0  # referencia para mutación adaptativa
+
+    for gen in range(1, max_gen + 1):
+        # --- Calcular fitness ---
+        if use_parallel:
+            fits = fitness_population_parallel(population, target_rgb, gray_image,
+                                               alpha=1.0, beta=0.9,
+                                               num_workers=num_workers)
+        else:
+            fits = fitness_population_vectorized(population, target_rgb, gray_image,
+                                                 alpha=1.0, beta=0.9)
+
+        # --- Mejor de la generación ---
+        idx_best = np.argmax(fits)
+        fit_best = fits[idx_best]
+        if fit_best > best_fitness:
+            best_fitness = fit_best
+            best_ind = deepcopy(population[idx_best])
+            generations_without_improvement = 0
+        else:
+            generations_without_improvement += 1
+
+        best_history.append(best_fitness)
+
+        if gen in DISPLAY_GENERATIONS:
+            best_images[gen] = clamp_rgb(best_ind.copy())
+
+        # --- Parada temprana ---
+        if generations_without_improvement >= NO_IMPROVEMENT_LIMIT:
+            print(f"🛑 Parada temprana en generación {gen}, sin mejora en {NO_IMPROVEMENT_LIMIT} generaciones.")
+            break
+
+        # --- Reinicio parcial ---
+        if gen % RESTART_INTERVAL == 0:
+            population = reset_population(population)
+
+        # --- Mutación adaptativa ---
+        MUTATION_RATE_DYNAMIC = max(0.05, 0.7 * (1 - best_fitness / max_possible_fitness))
+
+        # --- Elitismo ---
+        new_pop = []
+        elite_idxs = np.argsort(fits)[-ELITISM:]
+        for ei in elite_idxs:
+            new_pop.append(deepcopy(population[ei]))
+
+        # --- Generar nuevos hijos ---
+        while len(new_pop) < pop_size:
+            p1 = tournament_selection(population, fits, k=TOURNAMENT_SIZE)
+            p2 = tournament_selection(population, fits, k=TOURNAMENT_SIZE)
+
+            if random.random() < CROSSOVER_RATE:
+                c1, c2 = uniform_crossover(p1, p2)
+            else:
+                c1, c2 = deepcopy(p1), deepcopy(p2)
+
+            for child in (c1, c2):
+                if random.random() < MUTATION_RATE_DYNAMIC:
+                    op = random.choice(MUTATION_OPERATORS)
+                    if op is mutate_towards_gray:
+                        child = op(child, gray_image)
+                    else:
+                        child = op(child)
+                child = np.clip(child, 0, 255)
+                new_pop.append(child)
+                if len(new_pop) >= pop_size:
+                    break
+
+        population = np.array(new_pop, dtype=np.float32)
+
+        if gen % 50 == 0 or gen <= 5:
+            print(f"Gen {gen:5d} | Mejor fitness: {best_fitness:.8f} | MutRate: {MUTATION_RATE_DYNAMIC:.3f}")
+
+    best_images['final'] = clamp_rgb(best_ind.copy())
+    return best_history, best_images, clamp_rgb(best_ind.copy()), population
 
 # ---------- Ejecución ----------
 target_rgb = load_or_create_image(INPUT_IMAGE_PATH, size=IMAGE_SIZE)
