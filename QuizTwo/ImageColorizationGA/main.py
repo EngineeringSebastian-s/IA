@@ -245,9 +245,25 @@ def ask_initialization_mode():
                 elif cmap_choice == "c":
                     return ("colormap", "viridis")
                 else:
-                    print("❌ Opción inválida. Intente de nuevo.")
+                    print("Opción inválida. Intente de nuevo.")
         else:
-            print("❌ Opción inválida. Intente de nuevo.")
+            print("Opción inválida. Intente de nuevo.")
+
+def ask_execution_mode():
+    """
+    Pregunta si se desea ejecutar el algoritmo en modo secuencial o paralelo.
+    """
+    while True:
+        print("\nSeleccione modo de ejecución del algoritmo genético:")
+        print("1. Modo secuencial (más simple, menos rápido)")
+        print("2. Modo paralelo con mutación adaptativa (más rápido)")
+        choice = input("Ingrese 1 o 2: ").strip()
+        if choice == "1":
+            return "sequential"
+        elif choice == "2":
+            return "parallel"
+        else:
+            print("Opción inválida. Intente de nuevo.")
 
 
 # ---------- Inicialización ----------
@@ -468,8 +484,22 @@ print(f"DISPLAY_GENERATIONS = {DISPLAY_GENERATIONS}")
 print(f"RESTART_INTERVAL = {RESTART_INTERVAL}")
 
 
-history, snapshots, best_final = run_ga(target_rgb.astype(np.float32), target_gray,
-                                        pop_size=POPULATION_SIZE, max_gen=MAX_GENERATIONS)
+execution_mode = ask_execution_mode()
+
+if execution_mode == "sequential":
+    history, snapshots, best_final = run_ga(
+        target_rgb.astype(np.float32),
+        target_gray,
+        pop_size=POPULATION_SIZE,
+        max_gen=MAX_GENERATIONS
+    )
+elif execution_mode == "parallel":
+    history, snapshots, best_final = run_ga_parallel(
+        target_rgb.astype(np.float32),
+        target_gray,
+        pop_size=POPULATION_SIZE,
+        max_gen=MAX_GENERATIONS
+    )
 
 
 def show_image_grid(images, titles, figsize=(12, 6)):
