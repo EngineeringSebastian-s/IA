@@ -7,6 +7,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+import matplotlib.patches as mpatches
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(
@@ -107,6 +108,89 @@ def load_and_train_models():
 
     return log_reg, nn_model, scaler, df_synth, metrics
 
+def draw_neural_network_fixed(ax, layer_sizes, input_labels=None, output_labels=None):
+    """
+    Dibuja la arquitectura de una red neuronal usando matplotlib,
+    con corrección para evitar que los títulos de las capas se superpongan.
+    """
+    left, right, bottom, top = .1, .9, .1, .8  # Bajé un poco el 'top' para dar espacio a los títulos alternados
+    v_spacing = (top - bottom) / float(max(layer_sizes))
+    h_spacing = (right - left) / float(len(layer_sizes) - 1)
+
+    # Colores y estilos
+    node_color = '#FFCCCC'  # Color rosado claro
+    edge_color = '#FF0000'  # Borde rojo
+    arrow_color = '#4682B4'  # Azul acero para flechas
+    text_color = '#333333'
+
+    # Función auxiliar para calcular posiciones
+    def get_node_position(layer_idx, node_idx, layer_size):
+        layer_top = v_spacing * (layer_size - 1) / 2. + (top + bottom) / 2.
+        x = left + layer_idx * h_spacing
+        y = layer_top - node_idx * v_spacing
+        return x, y
+
+    # 1. Dibujar conexiones (flechas) - Se dibujan primero para quedar al fondo
+    for n, (layer_size_a, layer_size_b) in enumerate(zip(layer_sizes[:-1], layer_sizes[1:])):
+        for m in range(layer_size_a):
+            for o in range(layer_size_b):
+                x1, y1 = get_node_position(n, m, layer_size_a)
+                x2, y2 = get_node_position(n + 1, o, layer_size_b)
+                # Ajustar inicio y fin de flecha para que no queden dentro del círculo
+                dx, dy = x2 - x1, y2 - y1
+                dist = np.sqrt(dx ** 2 + dy ** 2)
+                shrink = v_spacing / 3.  # Radio aproximado del círculo
+
+                # Factor de corrección para que la flecha toque el borde
+                correction = 0.8
+
+                ax.annotate("",
+                            xy=(x2 - dx * (shrink * correction / dist), y2 - dy * (shrink * correction / dist)),
+                            xytext=(x1 + dx * (shrink * correction / dist), y1 + dy * (shrink * correction / dist)),
+                            arrowprops=dict(arrowstyle="->", color=arrow_color, lw=1.2, shrinkA=0, shrinkB=0), zorder=1)
+
+    # 2. Dibujar nodos (círculos)
+    for n, layer_size in enumerate(layer_sizes):
+        for m in range(layer_size):
+            x, y = get_node_position(n, m, layer_size)
+            # El radio depende del espaciado vertical
+            radius = v_spacing / 2.8
+            circle = mpatches.Circle((x, y), radius, edgecolor=edge_color, facecolor=node_color, lw=1.5, zorder=4)
+            ax.add_artist(circle)
+            # Numerar los nodos
+            ax.text(x, y, str(m + 1), ha='center', va='center', fontsize=10, fontweight='bold', color=text_color,
+                    zorder=5)
+
+    # 3. Etiquetas de capas (CORREGIDO: Altura alternada)
+    layer_names = ["Capa de Entrada", "Capa Oculta 1", "Capa Oculta 2", "Capa de Salida"]
+    for i, name in enumerate(layer_names):
+        x_pos = left + i * h_spacing
+        # AQUÍ ESTÁ LA CORRECCIÓN: Alternamos la altura (y_pos)
+        # Si el índice 'i' es par (0, 2), lo ponemos más abajo. Si es impar (1, 3), más arriba.
+        y_offset = 0.05 if i % 2 == 0 else 0.12
+        y_pos = top + y_offset
+
+        ax.text(x_pos, y_pos, name, ha='center', va='bottom', fontsize=11, fontweight='bold', color=text_color)
+
+    # 4. Etiquetas de Entrada laterales
+    if input_labels:
+        layer_size = layer_sizes[0]
+        for i, label in enumerate(input_labels):
+            x, y = get_node_position(0, i, layer_size)
+            ax.text(x - 0.05, y, label, ha='right', va='center', fontweight='bold', fontsize=11, color=text_color)
+
+    # 5. Etiquetas de Salida laterales
+    if output_labels:
+        layer_size = layer_sizes[-1]
+        for i, label in enumerate(output_labels):
+            x, y = get_node_position(len(layer_sizes) - 1, i, layer_size)
+            ax.text(x + 0.05, y, label, ha='left', va='center', fontweight='bold', fontsize=11, color=text_color)
+
+    # Ajustes finales del gráfico
+    ax.set_aspect('equal', adjustable='datalim')
+    ax.axis('off')
+    # Expandir los límites para asegurar que los textos de arriba se vean
+    ax.set_ylim(bottom - 0.1, top + 0.2)
 
 # Cargar modelos
 log_reg, nn_model, scaler, df_synth, metrics = load_and_train_models()
@@ -218,3 +302,27 @@ with tab2:
         disp_nn = ConfusionMatrixDisplay(confusion_matrix=cm_nn, display_labels=["Normal", "Dosificar"])
         disp_nn.plot(ax=ax4, cmap='Purples', colorbar=False)
         st.pyplot(fig4)
+
+st.markdown("---")
+st.subheader("🧠 Arquitectura Exacta de la Red Neuronal (Modelo pH)")
+st.markdown("""
+Este diagrama representa fielmente el modelo `MLPClassifier` entrenado en el código:
+- **Entrada (2 neuronas):** Reciben los valores normalizados de pH y TDS.
+- **Capa Oculta 1 (5 neuronas):** Procesa las entradas iniciales.
+- **Capa Oculta 2 (5 neuronas):** Procesa la información de la primera capa oculta para capturar patrones complejos.
+- **Salida (1 neurona):** Determina la probabilidad de activar el reductor (Dosificar).
+""")
+
+# Definir la estructura exacta de tu modelo: [Entradas, Oculta1, Oculta2, Salida]
+# Esto coincide con: X_nn (2 variables) y hidden_layer_sizes=(5, 5) y salida binaria (1)
+rna_structure_exacta = [2, 5, 5, 1]
+input_names_exactos = ["pH", "TDS"]
+output_names_exactos = ["Salida\n(Dosificar)"]
+
+# Crear la figura
+fig_rna_fixed, ax_rna_fixed = plt.subplots(figsize=(9, 6)) # Un poco más ancho para dar espacio
+draw_neural_network_fixed(ax_rna_fixed, rna_structure_exacta, input_labels=input_names_exactos, output_labels=output_names_exactos)
+
+# Mostrar en Streamlit
+st.pyplot(fig_rna_fixed)
+st.caption("Figura 5: Diagrama generado dinámicamente de la arquitectura 2-5-5-1 utilizada en este dashboard.")
