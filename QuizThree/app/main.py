@@ -6,200 +6,230 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, f1_score
 
-# --- 1. PREPARACIÓN DE DATOS ---
+# ==========================================
+# 1. GENERACIÓN DE DATOS Y ENTRENAMIENTO
+# ==========================================
 
-# Cargar datos (Asegúrate de que la ruta sea correcta)
-try:
-    df = pd.read_csv("data/IoTData --Raw--.csv")
-except FileNotFoundError:
-    # Fallback por si no encuentra el archivo al ejecutar la demo
-    from io import StringIO
-
-    csv_data = """
-    "id","timestamp","pH","TDS","water_level","DHT_temp","DHT_humidity","water_temp","pH_reducer","add_water","nutrients_adder","humidifier","ex_fan"
-    "1","2023-11-26 10:57:52","7","500","0","25.5","60","20","ON",,"OFF","OFF","ON"
-    """
-    df = pd.read_csv(StringIO(csv_data))
-
-# --- LIMPIEZA ---
-cols_actuadores = ["pH_reducer", "add_water", "nutrients_adder", "humidifier", "ex_fan"]
-# Verificar si las columnas existen antes de limpiar
-existing_cols = [c for c in cols_actuadores if c in df.columns]
-if existing_cols:
-    df[existing_cols] = df[existing_cols].fillna("OFF")
-    mapping = {'ON': 1, 'OFF': 0}
-    for col in existing_cols:
-        df[col] = df[col].map(mapping)
-
-# --- AUMENTO DE DATOS (Simulación) ---
+# Generamos datos sintéticos robustos (500 muestras)
 np.random.seed(42)
 synthetic_data = []
-for _ in range(100):
-    temp = np.random.uniform(20, 35)
-    hum = np.random.uniform(40, 90)
+for _ in range(500):
+    temp = np.random.uniform(15, 40)
+    hum = np.random.uniform(30, 95)
+    # Lógica: Ventilador ON si Temp > 28 OR Humedad > 75 (con ruido)
     fan = 1 if (temp > 28 or hum > 75) else 0
+    if np.random.rand() > 0.95: fan = 1 - fan
 
-    ph = np.random.uniform(5.0, 8.0)
-    tds = np.random.uniform(300, 800)
-    reducer = 1 if ph > 6.2 else 0
+    ph = np.random.uniform(4.0, 9.0)
+    tds = np.random.uniform(200, 900)
+    # Lógica: Reductor ON si pH > 6.5 (con ruido)
+    reducer = 1 if ph > 6.5 else 0
+    if np.random.rand() > 0.95: reducer = 1 - reducer
 
     synthetic_data.append([ph, tds, temp, hum, reducer, fan])
 
 df_synth = pd.DataFrame(synthetic_data, columns=['pH', 'TDS', 'DHT_temp', 'DHT_humidity', 'pH_reducer', 'ex_fan'])
 
-# --- ENTRENAMIENTO MODELOS ---
-
-# Modelo 1: Regresión Logística (Ventilador)
+# --- MODELO A: Regresión Logística (Ventilador) ---
 X_log = df_synth[['DHT_temp', 'DHT_humidity']]
 y_log = df_synth['ex_fan']
-log_reg = LogisticRegression()
-log_reg.fit(X_log, y_log)
+X_train_log, X_test_log, y_train_log, y_test_log = train_test_split(X_log, y_log, test_size=0.2, random_state=42)
 
-# Modelo 2: Red Neuronal (pH)
+log_reg = LogisticRegression()
+log_reg.fit(X_train_log, y_train_log)
+y_pred_log = log_reg.predict(X_test_log)
+
+# --- MODELO B: Red Neuronal (pH) ---
 X_nn = df_synth[['pH', 'TDS']]
 y_nn = df_synth['pH_reducer']
+X_train_nn, X_test_nn, y_train_nn, y_test_nn = train_test_split(X_nn, y_nn, test_size=0.2, random_state=42)
+
 scaler = StandardScaler()
-X_nn_scaled = scaler.fit_transform(X_nn)
-nn_model = MLPClassifier(hidden_layer_sizes=(5, 5), max_iter=1000, random_state=42)
-nn_model.fit(X_nn_scaled, y_nn)
+X_train_nn_scaled = scaler.fit_transform(X_train_nn)
+X_test_nn_scaled = scaler.transform(X_test_nn)
+
+nn_model = MLPClassifier(hidden_layer_sizes=(5, 5), max_iter=2000, random_state=42)
+nn_model.fit(X_train_nn_scaled, y_train_nn)
+y_pred_nn = nn_model.predict(X_test_nn_scaled)
+
+# Imprimir métricas en consola (opcional, para referencia técnica)
+print(f"Precisión Logística: {accuracy_score(y_test_log, y_pred_log):.2f}")
+print(f"Precisión Red Neuronal: {accuracy_score(y_test_nn, y_pred_nn):.2f}")
 
 
-# --- INTERFAZ GRÁFICA ---
+# ==========================================
+# 2. INTERFAZ GRÁFICA (DASHBOARD)
+# ==========================================
 
 class SmartPotApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("SmartPot Dashboard - Control Inteligente")
-        self.root.geometry("1000x650")
+        self.root.title("SmartPot - Dashboard de Control y Diagnóstico")
+        self.root.geometry("1200x700")
 
-        # Estilos
+        # Estilos visuales
         style = ttk.Style()
-        style.configure("TLabel", font=("Segoe UI", 11))
-        style.configure("TButton", font=("Segoe UI", 11, "bold"))
+        style.configure("TLabel", font=("Segoe UI", 10))
+        style.configure("Header.TLabel", font=("Segoe UI", 12, "bold"))
+        style.configure("Result.TLabel", font=("Segoe UI", 11))
 
-        # --- Panel Izquierdo: Controles (Perillas) ---
-        input_frame = ttk.LabelFrame(root, text="Panel de Control Manual (Simulación)", padding=20)
-        input_frame.grid(row=0, column=0, padx=20, pady=20, sticky="nw")
+        # --- LAYOUT PRINCIPAL ---
+        main_frame = ttk.Frame(root)
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Función auxiliar para crear perillas (sliders)
-        def create_slider(parent, label_text, min_val, max_val, default_val, resolution, row):
-            ttk.Label(parent, text=label_text).grid(row=row, column=0, sticky="w", pady=(10, 0))
+        # ---------------------------------------
+        # COLUMNA IZQUIERDA: CONTROLES MANUALES
+        # ---------------------------------------
+        control_panel = ttk.LabelFrame(main_frame, text=" Simulador de Sensores ", padding=15)
+        control_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
-            # Usamos tk.Scale nativo porque permite visualizar el valor numérico fácilmente
-            scale = tk.Scale(parent, from_=min_val, to=max_val, orient=tk.HORIZONTAL,
-                             resolution=resolution, length=250,
-                             activebackground="#4CAF50", highlightthickness=0)
-            scale.set(default_val)
-            scale.grid(row=row + 1, column=0, pady=(0, 10))
-            return scale
+        # Sliders usando la función helper
+        self.create_slider(control_panel, "🌡️ Temperatura (°C)", 10, 40, 25.5, 0.1, 0, 'scale_temp')
+        self.create_slider(control_panel, "💧 Humedad (%)", 0, 100, 60, 1, 2, 'scale_hum')
+        ttk.Separator(control_panel, orient='horizontal').grid(row=4, column=0, sticky="ew", pady=15)
+        self.create_slider(control_panel, "⚗️ pH del Agua", 0, 14, 7.0, 0.01, 5, 'scale_ph')
+        self.create_slider(control_panel, "🧂 TDS (ppm)", 0, 1000, 500, 10, 7, 'scale_tds')
 
-        # 1. Slider Temperatura
-        self.scale_temp = create_slider(input_frame, "🌡️ Temperatura (°C):", 10, 40, 25.5, 0.1, 0)
+        # Botón de Acción
+        btn_predict = ttk.Button(control_panel, text="ANALIZAR CONDICIONES", command=self.predict_actions)
+        btn_predict.grid(row=9, column=0, pady=25, sticky="ew")
 
-        # 2. Slider Humedad
-        self.scale_hum = create_slider(input_frame, "💧 Humedad (%):", 0, 100, 60, 1, 2)
+        # Panel de Resultados
+        self.res_frame = ttk.LabelFrame(control_panel, text=" Estado del Sistema (IA) ", padding=15)
+        self.res_frame.grid(row=10, column=0, sticky="ew")
 
-        # 3. Slider pH
-        self.scale_ph = create_slider(input_frame, "⚗️ pH del Agua:", 0, 14, 7.0, 0.01, 4)
-
-        # 4. Slider TDS
-        self.scale_tds = create_slider(input_frame, "🧂 TDS (ppm):", 0, 1000, 500, 10, 6)
-
-        # Botón Predecir
-        btn_predict = ttk.Button(input_frame, text="ANALIZAR DATOS", command=self.predict_actions)
-        btn_predict.grid(row=8, column=0, pady=20, sticky="ew")
-
-        # Resultados
-        self.result_frame = ttk.LabelFrame(root, text="Decisión de la IA", padding=20)
-        self.result_frame.grid(row=1, column=0, padx=20, pady=10, sticky="nsew")
-
-        self.lbl_fan = ttk.Label(self.result_frame, text="Ventilador: ---", font=("Segoe UI", 12))
+        self.lbl_fan = ttk.Label(self.res_frame, text="Ventilador: ---", style="Result.TLabel", foreground="gray")
         self.lbl_fan.pack(anchor="w", pady=5)
-
-        self.lbl_ph = ttk.Label(self.result_frame, text="Reductor pH: ---", font=("Segoe UI", 12))
+        self.lbl_ph = ttk.Label(self.res_frame, text="Reductor pH: ---", style="Result.TLabel", foreground="gray")
         self.lbl_ph.pack(anchor="w", pady=5)
 
-        # --- Panel Derecho: Gráficas ---
-        self.graph_frame = ttk.Frame(root)
-        self.graph_frame.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
+        # ---------------------------------------
+        # COLUMNA DERECHA: VISUALIZACIONES (TABS)
+        # ---------------------------------------
+        right_panel = ttk.Frame(main_frame)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
-        self.plot_graphs()
+        # Crear sistema de pestañas
+        self.notebook = ttk.Notebook(right_panel)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        # Pestaña 1: Gráficos de Comportamiento
+        self.tab_behavior = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_behavior, text="Dinámica del Modelo")
+
+        # Pestaña 2: Matrices de Confusión
+        self.tab_metrics = ttk.Frame(self.notebook)
+        self.notebook.add(self.tab_metrics, text="Evaluación de Precisión")
+
+        # Renderizar gráficos
+        self.plot_behavior_charts(self.tab_behavior)
+        self.plot_confusion_matrices(self.tab_metrics)
+
+    def create_slider(self, parent, text, vmin, vmax, vdef, res, row, attr_name):
+        """Helper para crear sliders consistentes"""
+        ttk.Label(parent, text=text, style="Header.TLabel").grid(row=row, column=0, sticky="w", pady=(5, 0))
+        scale = tk.Scale(parent, from_=vmin, to=vmax, orient=tk.HORIZONTAL, resolution=res, length=240,
+                         activebackground="#2196F3", highlightthickness=0)
+        scale.set(vdef)
+        scale.grid(row=row + 1, column=0, pady=(0, 10))
+        setattr(self, attr_name, scale)
 
     def predict_actions(self):
         try:
-            # 1. Obtener valores DIRECTAMENTE de los Sliders (ya son float/int)
+            # 1. Obtener valores
             t = self.scale_temp.get()
             h = self.scale_hum.get()
             ph = self.scale_ph.get()
             tds = self.scale_tds.get()
 
-            # --- Crear DataFrames con nombres CORRECTOS ---
-            input_log_df = pd.DataFrame([[t, h]], columns=['DHT_temp', 'DHT_humidity'])
-            input_nn_df = pd.DataFrame([[ph, tds]], columns=['pH', 'TDS'])
+            # 2. Crear DataFrames (Evita warnings de sklearn)
+            in_log = pd.DataFrame([[t, h]], columns=['DHT_temp', 'DHT_humidity'])
+            in_nn = pd.DataFrame([[ph, tds]], columns=['pH', 'TDS'])
 
-            # 2. Predicciones
-            fan_pred = log_reg.predict(input_log_df)[0]
-            fan_prob = log_reg.predict_proba(input_log_df)[0][1]
+            # 3. Predicciones
+            fan_act = log_reg.predict(in_log)[0]
+            fan_prob = log_reg.predict_proba(in_log)[0][1]
 
-            input_nn_scaled = scaler.transform(input_nn_df)
-            ph_pred = nn_model.predict(input_nn_scaled)[0]
+            in_nn_scaled = scaler.transform(in_nn)
+            ph_act = nn_model.predict(in_nn_scaled)[0]
 
-            # 3. Actualizar UI con colores visuales
-            if fan_pred == 1:
+            # 4. Actualizar UI
+            # Lógica Ventilador
+            if fan_act == 1:
                 self.lbl_fan.config(text=f"💨 Ventilador: ACTIVADO ({fan_prob * 100:.1f}%)", foreground="red")
             else:
                 self.lbl_fan.config(text=f"💨 Ventilador: APAGADO ({fan_prob * 100:.1f}%)", foreground="green")
 
-            if ph_pred == 1:
+            # Lógica pH
+            if ph_act == 1:
                 self.lbl_ph.config(text="🧪 Reductor pH: DOSIFICAR", foreground="red")
             else:
                 self.lbl_ph.config(text="🧪 Reductor pH: ESTABLE", foreground="green")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Ocurrió un error: {e}")
+            messagebox.showerror("Error", f"Error en cálculo: {e}")
 
-    def plot_graphs(self):
-        # Crear figura
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 7), dpi=90)
+    def plot_behavior_charts(self, parent_frame):
+        """Gráficos: Scatter Plot y Curva de Pérdida"""
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), dpi=100)
 
-        # Gráfico 1
-        scatter = ax1.scatter(df_synth['DHT_temp'], df_synth['DHT_humidity'], c=df_synth['ex_fan'], cmap='coolwarm',
-                              alpha=0.7)
-        ax1.set_title("Regresión Logística: Zona de Activación Ventilador")
+        # A. Scatter Plot (Regresión Logística)
+        scatter = ax1.scatter(df_synth['DHT_temp'], df_synth['DHT_humidity'],
+                              c=df_synth['ex_fan'], cmap='coolwarm', alpha=0.6, edgecolors='w')
+        ax1.set_title("Distribución: Temperatura vs Humedad")
         ax1.set_xlabel("Temperatura (°C)")
         ax1.set_ylabel("Humedad (%)")
-        ax1.grid(True, linestyle='--', alpha=0.5)
+        ax1.legend(*scatter.legend_elements(), title="Ventilador (0=Off, 1=On)")
+        ax1.grid(True, linestyle=':', alpha=0.6)
 
-        # Leyenda manual simple
-        legend_elements = scatter.legend_elements()
-        ax1.legend(legend_elements[0], ["Apagado", "Encendido"], loc="upper left")
-
-        # Gráfico 2
-        ax2.plot(nn_model.loss_curve_, color='purple', linewidth=2)
-        ax2.set_title("Red Neuronal: Curva de Aprendizaje (Error vs Tiempo)")
-        ax2.set_xlabel("Iteraciones de Entrenamiento")
-        ax2.set_ylabel("Pérdida (Loss)")
-        ax2.grid(True, linestyle='--', alpha=0.5)
+        # B. Loss Curve (Red Neuronal)
+        ax2.plot(nn_model.loss_curve_, color='#673AB7', linewidth=2)
+        ax2.set_title("Entrenamiento Red Neuronal (Loss Curve)")
+        ax2.set_xlabel("Iteraciones")
+        ax2.set_ylabel("Error (Loss)")
+        ax2.grid(True, linestyle=':', alpha=0.6)
 
         plt.tight_layout()
 
-        # Canvas
-        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
         canvas.draw()
-        canvas.get_tk_widget().pack()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    def plot_confusion_matrices(self, parent_frame):
+        """Gráficos: Matrices de Confusión"""
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), dpi=100)
+
+        # A. Matriz Regresión Logística
+        cm_log = confusion_matrix(y_test_log, y_pred_log)
+        disp_log = ConfusionMatrixDisplay(confusion_matrix=cm_log, display_labels=["Apagado", "Encendido"])
+        disp_log.plot(ax=ax1, cmap='Blues', colorbar=False)
+        ax1.set_title("Matriz: Control Ambiental\n(Reg. Logística)")
+
+        # B. Matriz Red Neuronal
+        cm_nn = confusion_matrix(y_test_nn, y_pred_nn)
+        disp_nn = ConfusionMatrixDisplay(confusion_matrix=cm_nn, display_labels=["Normal", "Dosificar"])
+        disp_nn.plot(ax=ax2, cmap='Purples', colorbar=False)
+        ax2.set_title("Matriz: Control Químico\n(Red Neuronal)")
+
+        plt.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=parent_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
 
-# Ejecutar App
 if __name__ == "__main__":
     root = tk.Tk()
-    # Forzar tema para que se vea un poco más moderno
+    # Intento de cargar tema Azure/Sun valley si existe, sino usa default
     try:
-        root.tk.call("source", "azure.tcl")  # Opcional si tienes temas
+        root.tk.call("source", "azure.tcl")
         root.tk.call("set_theme", "light")
     except:
-        pass
+        pass  # Usa tema por defecto si no tienes archivos externos
 
     app = SmartPotApp(root)
     root.mainloop()
