@@ -224,12 +224,11 @@ class SmartPotApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    # Intento de cargar tema Azure/Sun valley si existe, sino usa default
     try:
         root.tk.call("source", "azure.tcl")
         root.tk.call("set_theme", "light")
     except:
-        pass  # Usa tema por defecto si no tienes archivos externos
+        pass
 
     app = SmartPotApp(root)
     root.mainloop()
