@@ -122,22 +122,32 @@ class SmartPotApp:
 
     def predict_actions(self):
         try:
-            # 1. Obtener valores
+            # 1. Obtener valores de la interfaz
             t = float(self.entry_temp.get())
             h = float(self.entry_hum.get())
             ph = float(self.entry_ph.get())
             tds = float(self.entry_tds.get())
 
+            # Creamos DataFrames con los nombres de columnas EXACTOS usados en el entrenamiento
+
+            # Datos para Regresión Logística (Ventilador)
+            input_log_df = pd.DataFrame([[t, h]], columns=['DHT_temp', 'DHT_humidity'])
+
+            # Datos para Red Neuronal (pH)
+            input_nn_df = pd.DataFrame([[ph, tds]], columns=['pH', 'TDS'])
+            # -----------------------
+
             # 2. Predicción Regresión Logística (Ventilador)
-            fan_pred = log_reg.predict([[t, h]])[0]
-            fan_prob = log_reg.predict_proba([[t, h]])[0][1]  # Probabilidad de ser 1
+            # Ahora pasamos el DataFrame 'input_log_df' en lugar de la lista [[t, h]]
+            fan_pred = log_reg.predict(input_log_df)[0]
+            fan_prob = log_reg.predict_proba(input_log_df)[0][1]
 
             # 3. Predicción Red Neuronal (pH)
-            # Importante: escalar la entrada igual que en el entrenamiento
-            input_nn = scaler.transform([[ph, tds]])
-            ph_pred = nn_model.predict(input_nn)[0]
+            # El scaler también necesita nombres de columnas para no lanzar advertencias
+            input_nn_scaled = scaler.transform(input_nn_df)
+            ph_pred = nn_model.predict(input_nn_scaled)[0]
 
-            # 4. Actualizar UI
+            # 4. Actualizar UI (Esto sigue igual)
             if fan_pred == 1:
                 self.lbl_fan.config(text=f"Ventilador: ENCENDER (Prob: {fan_prob:.2f})", foreground="red")
             else:
