@@ -10,7 +10,7 @@ from PIL import Image, ImageTk
 # ---------- Parámetros configurables ----------
 
 INPUT_IMAGE_PATH = "/img/natural-scenery-picture.jpg"  # Ruta de la imagen objetivo a replicar. Si está vacío, se genera una imagen por defecto
-IMAGE_SIZE = (256, 256)  # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
+IMAGE_SIZE = (16, 16)  # Tamaño de la imagen a procesar (ancho, alto). Menor tamaño = más rápido
 POPULATION_SIZE = 1000  # Número de individuos (soluciones) en cada generación
 MAX_GENERATIONS = 10000  # Número máximo de generaciones del algoritmo genético
 TOURNAMENT_SIZE = 3  # Número de individuos seleccionados aleatoriamente para competir en el torneo de selección
