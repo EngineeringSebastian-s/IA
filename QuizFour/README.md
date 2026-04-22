@@ -1,9 +1,3 @@
-Aquí tienes una propuesta de `README.md` profesional, estructurado específicamente para desarrolladores y orientado a la implementación técnica del proyecto.
-
-He sintetizado la información de tu documentación para que sea directa y funcional, añadiendo las secciones estándar de un repositorio de software (Instalación, Uso, Estructura).
-
------
-
 # 🌱 SmartPot: Agente Reactivo para Hidroponía Automatizada
 
 **SmartPot** es un sistema de software diseñado para el control y monitoreo de jardines hidropónicos de precisión. Implementa un **Agente Inteligente Reactivo** capaz de percibir variables ambientales críticas (pH, temperatura, humedad, etc.) y ejecutar acciones correctivas inmediatas para mantener la homeostasis del cultivo.
